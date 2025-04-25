@@ -16,25 +16,38 @@ def save_json_to_file(data, file_path):
     print(f"JSON data saved to {file_path}")
 
 
-def fetch_systemkameraer_list(url, page_number=1):
+def fetch_systemkameraer_list(base_url, page_number=1):
     """Fetch the list of system cameras and save it as a JSON file."""
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
+    while True:
+        try:
+            url = f"{base_url}&page={page_number}"
+            response = requests.get(url)
+            response.raise_for_status()
 
-        # Use BeautifulSoup to parse the HTML content
-        soup = BeautifulSoup(response.text, 'html.parser')
+            # Use BeautifulSoup to parse the HTML content
+            soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Extract URLs from <a> tags with class 'sf-search-ad-link'
-        urls = extract_urls(response.text)
-        save_urls_to_json(urls, f'page{page_number}_urls.json')
+            # Extract URLs from <a> tags with class 'sf-search-ad-link'
+            urls = extract_urls(response.text)
 
-        # Fetch and save JSON data for each URL
-        for url in urls:
-            fetch_and_save_listing_json(url)
+            # Filter out URLs containing 'ad.html'
+            filtered_urls = [url for url in urls if 'ad.html' not in url]
+            save_urls_to_json(filtered_urls, page_number)
 
-    except requests.RequestException as e:
-        print(f"Error fetching data: {e}")
+            # Fetch and save JSON data for each URL
+            for url in filtered_urls:
+                fetch_and_save_listing_json(url)
+
+            # Check for the "next" page link
+            next_page = soup.find('a', rel='next', href=True)
+            if not next_page:
+                break  # No more pages
+
+            page_number += 1
+
+        except requests.RequestException as e:
+            print(f"Error fetching data: {e}")
+            break
 
 
 def fetch_and_save_listing_json(url):
@@ -92,16 +105,20 @@ def extract_urls(html_content):
     return urls
 
 
-def save_urls_to_json(urls, filename):
-    with open(filename, 'w') as f:
-        json.dump(urls, f, indent=4)
+def save_urls_to_json(urls, page_number):
+    """Save page URLs to a JSON file in the breadcrumb path."""
+    breadcrumb_path = os.path.join(
+        "json_data", "torget", "elektronikk_og_hvitevarer", "foto_og_video", "systemkamera", "pages")
+    file_path = os.path.join(breadcrumb_path, f"page_{page_number}_urls.json")
+
+    save_json_to_file(urls, file_path)
 
 
 def main():
-    # URL for the systemkameraer category
-    url = 'https://www.finn.no/recommerce/forsale/search?product_category=2.93.3904.66'
+    # Base URL for the systemkameraer category
+    base_url = 'https://www.finn.no/recommerce/forsale/search?product_category=2.93.3904.66'
     print("Fetching systemkameraer listings...")
-    fetch_systemkameraer_list(url)
+    fetch_systemkameraer_list(base_url)
 
 
 if __name__ == "__main__":

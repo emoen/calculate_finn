@@ -1,0 +1,1 @@
+0 3 * * * cd ~/project/calculate_finn && /home/endrem/project/calculate_finn/calculate/bin/python3 track_new.py >> ~/project/calculate_finn/cron.log 2>&1
