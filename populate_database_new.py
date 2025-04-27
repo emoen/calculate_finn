@@ -16,7 +16,8 @@ def create_database(db_name='listings.db'):
     ''')
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS processed_folders (
-            folder_name TEXT PRIMARY KEY
+            folder_name TEXT PRIMARY KEY,
+            done BOOLEAN DEFAULT FALSE
         )
     ''')
     conn.commit()
@@ -45,9 +46,20 @@ def mark_folder_as_processed(conn, folder_name):
     """Mark a folder as processed in the database."""
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT OR IGNORE INTO processed_folders (folder_name)
-        VALUES (?)
+        INSERT OR IGNORE INTO processed_folders (folder_name, done)
+        VALUES (?, FALSE)
     ''', (folder_name,))
+    conn.commit()
+
+
+def update_folders_to_done(conn):
+    """Update all processed folders to done."""
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE processed_folders
+        SET done = TRUE
+        WHERE done = FALSE
+    ''')
     conn.commit()
 
 
@@ -110,10 +122,16 @@ def store_new_json_files_in_db():
     directories = [d for d in os.listdir(
         base_directory) if d.startswith('torget_')]
 
+    conn = create_database()
+    # Update folders to done at the start of a new day
+    update_folders_to_done(conn)
+
     for directory in directories:
         full_path = os.path.join(base_directory, directory)
         print(f"Processing JSON files in {full_path}...")
         process_json_files(full_path)
+
+    conn.close()
 
 
 if __name__ == "__main__":

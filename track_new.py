@@ -17,10 +17,8 @@ def save_json_to_file(data, file_path):
     print(f"JSON data saved to {file_path}")
 
 
-def fetch_items_on_page(base_url, existing_ids, page_number=1):
+def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0, page_number=1):
     """Fetch the list of system cameras and save it as a JSON file."""
-    error_count = 0
-    index_of_solgt = 0
     consecutive_existing_count = 0
 
     while True:
@@ -46,9 +44,9 @@ def fetch_items_on_page(base_url, existing_ids, page_number=1):
                 finn_id = url.split('/')[-1]
                 if finn_id in existing_ids:
                     consecutive_existing_count += 1
-                    if consecutive_existing_count >= 20:
-                        print("Reached 20 consecutive existing finn_ids. Stopping.")
-                        return
+                    if consecutive_existing_count >= 3:
+                        print("Reached 3 consecutive existing finn_ids. Stopping.")
+                        return error_count, index_of_solgt
                     continue
                 else:
                     consecutive_existing_count = 0
@@ -69,6 +67,8 @@ def fetch_items_on_page(base_url, existing_ids, page_number=1):
             print(f"Error fetching data: {e}")
             print(f"Total number of items with errors: {error_count}")
             break
+
+    return error_count, index_of_solgt
 
 
 def fetch_and_save_item(url, error_count, index_of_solgt):
