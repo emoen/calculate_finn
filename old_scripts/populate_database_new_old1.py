@@ -23,6 +23,14 @@ def create_database(db_name='listings.db'):
     return conn
 
 
+def load_existing_finn_ids(conn):
+    """Load existing finn_ids from the database into a set."""
+    cursor = conn.cursor()
+    cursor.execute('SELECT id FROM listings')
+    existing_ids = {row[0] for row in cursor.fetchall()}
+    return existing_ids
+
+
 def insert_listing(conn, listing_id, data):
     """Insert a listing into the database."""
     cursor = conn.cursor()
@@ -55,6 +63,7 @@ def is_folder_processed(conn, folder_name):
 def process_json_files(directory):
     """Process all JSON files in the given directory and insert them into the database."""
     conn = create_database()
+    existing_ids = load_existing_finn_ids(conn)
     folder_name = os.path.basename(directory)
 
     if is_folder_processed(conn, folder_name):
@@ -80,7 +89,11 @@ def process_json_files(directory):
                         # Handle dictionary data
                         listing_id = data.get(
                             'finn_id', os.path.splitext(file)[0])
-                        insert_listing(conn, listing_id, data)
+                        if listing_id not in existing_ids:
+                            insert_listing(conn, listing_id, data)
+                            existing_ids.add(listing_id)
+                        else:
+                            print(f"Listing {listing_id} already processed.")
 
                     else:
                         print(f"Unexpected data format in {file_path}")

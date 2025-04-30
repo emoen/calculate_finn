@@ -11,7 +11,8 @@ def create_database(db_name='listings.db'):
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS listings (
             id TEXT PRIMARY KEY,
-            data TEXT
+            data TEXT,
+            inserted_at TIMESTAMP
         )
     ''')
     cursor.execute('''
@@ -33,12 +34,13 @@ def load_existing_finn_ids(conn):
 
 
 def insert_listing(conn, listing_id, data):
-    """Insert a listing into the database."""
+    """Insert a listing into the database with the current timestamp."""
     cursor = conn.cursor()
+    current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('''
-        INSERT OR REPLACE INTO listings (id, data)
-        VALUES (?, ?)
-    ''', (listing_id, json.dumps(data)))
+        INSERT OR REPLACE INTO listings (id, data, inserted_at)
+        VALUES (?, ?, ?)
+    ''', (listing_id, json.dumps(data), current_timestamp))
     conn.commit()
 
 
@@ -123,12 +125,17 @@ def store_new_json_files_in_db():
         base_directory) if d.startswith('torget_')]
 
     conn = create_database()
-    # Update folders to done at the start of a new day
-    update_folders_to_done(conn)
+
+    # Check if it's a new day and update folders to done
+    last_processed_date = None
+    if last_processed_date != today:
+        print("Updating folders to done...", directories)
+        update_folders_to_done(conn)
+        last_processed_date = today
 
     for directory in directories:
         full_path = os.path.join(base_directory, directory)
-        print(f"Processing JSON files in {full_path}...")
+        print(f"Inserting into db Processing JSON files in {full_path}...")
         process_json_files(full_path)
 
     conn.close()
