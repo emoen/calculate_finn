@@ -1,6 +1,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.db
+*.json
 
 # Your specific folders
 calculate/
