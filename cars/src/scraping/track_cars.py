@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 from datetime import datetime
-from src.config import BASE_DIR, JSON_DATA_DIR
+from src.config import BASE_DIR
 
 # Use configuration from src.config
 # BASE_DIR is already imported
