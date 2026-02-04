@@ -3,10 +3,10 @@ import os
 from pathlib import Path
 
 # Configuration
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 JSON_DATA_DIR = BASE_DIR / 'json_data'
-RANKINGS_FILE = BASE_DIR / 'rankings.json'
-OUTPUT_FILE = BASE_DIR / 'index.html'
+RANKINGS_FILE = BASE_DIR / 'rankings_data' / 'rankings.json'
+OUTPUT_FILE = BASE_DIR / 'web' / 'index.html'
 
 def load_data():
     """Load rankings from the central JSON file."""

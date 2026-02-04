@@ -11,10 +11,10 @@ from sklearn.metrics import mean_absolute_error, r2_score
 import joblib
 
 # Configuration
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 JSON_DATA_DIR = BASE_DIR / 'json_data' / 'cars_20012026'
-MARKET_KNOWLEDGE_FILE = BASE_DIR / 'market_knowledge.json'
-SCORES_OUTPUT_FILE = BASE_DIR / 'ml_scores.json'
+MARKET_KNOWLEDGE_FILE = BASE_DIR / 'rankings_data' / 'market_knowledge.json'
+SCORES_OUTPUT_FILE = BASE_DIR / 'rankings_data' / 'ml_scores.json'
 
 def load_market_knowledge():
     if not MARKET_KNOWLEDGE_FILE.exists():

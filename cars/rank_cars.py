@@ -8,9 +8,9 @@ from datetime import datetime
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "xiaomi/mimo-v2-flash:free"
-METADATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rankings.json")
-MARKET_STATS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "market_knowledge.json")
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+METADATA_FILE = os.path.join(BASE_DIR, "rankings_data", "rankings.json")
+MARKET_STATS_FILE = os.path.join(BASE_DIR, "rankings_data", "market_knowledge.json")
 JSON_DATA_DIR = os.path.join(BASE_DIR, "json_data")
 
 def get_market_stats():

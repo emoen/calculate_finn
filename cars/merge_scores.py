@@ -4,10 +4,10 @@ import pandas as pd
 from pathlib import Path
 
 # Configuration
-BASE_DIR = Path(__file__).resolve().parent
-JSON_DATA_DIR = BASE_DIR / 'json_data' / 'cars_20012026'
-ML_SCORES_FILE = BASE_DIR / 'ml_scores.json'
-OUTPUT_FILE = BASE_DIR / 'comparison_scores.json'
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+JSON_DATA_DIR = BASE_DIR / 'json_data'
+ML_SCORES_FILE = BASE_DIR / 'rankings_data' / 'ml_scores.json'
+OUTPUT_FILE = BASE_DIR / 'rankings_data' / 'comparison_scores.json'
 
 def load_ml_scores():
     if not ML_SCORES_FILE.exists():
@@ -18,21 +18,26 @@ def load_ml_scores():
 def get_llm_scores():
     llm_scores = {}
     print(f"Scanning {JSON_DATA_DIR} for analysis.json...")
-    for root, dirs, files in os.walk(JSON_DATA_DIR):
-        if "analysis.json" in files:
-            path = os.path.join(root, "analysis.json")
-            try:
-                with open(path, 'r') as f:
-                    data = json.load(f)
-                    # Assuming folder name is finn_id, or we need to extract from path
-                    # cars/json_data/cars_20012026/138211802/analysis.json -> id is 138211802
-                    finn_id = os.path.basename(root)
-                    
-                    score = data.get('score')
-                    if score is not None:
-                        llm_scores[finn_id] = float(score)
-            except Exception:
-                continue
+    
+    if JSON_DATA_DIR.exists():
+        for date_dir in os.listdir(JSON_DATA_DIR):
+            dir_path = JSON_DATA_DIR / date_dir
+            if dir_path.is_dir() and date_dir.startswith('cars_'):
+                print(f"  Scanning directory: {date_dir}")
+                for root, dirs, files in os.walk(dir_path):
+                    if "analysis.json" in files:
+                        path = os.path.join(root, "analysis.json")
+                        try:
+                            with open(path, 'r') as f:
+                                data = json.load(f)
+                                # Assuming folder name is finn_id
+                                finn_id = os.path.basename(root)
+                                
+                                score = data.get('score')
+                                if score is not None:
+                                    llm_scores[finn_id] = float(score)
+                        except Exception:
+                            continue
     return llm_scores
 
 def main():

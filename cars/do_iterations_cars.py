@@ -3,22 +3,26 @@ import sqlite3
 import time
 from datetime import datetime
 
-# Local imports - this works if run from the same directory, or if the directory is in python path
+# Local imports - adjusting for new structure where we run this as a module or with PYTHONPATH set
 try:
-    from track_cars import fetch_items_on_page
-    from populate_database_cars import store_new_json_files_in_db
+    from src.scraping.track_cars import fetch_items_on_page
+    from src.processing.populate_database_cars import store_new_json_files_in_db
 except ImportError:
-    # If run from root, we might need adjustments, but since all 3 are in 'cars/', 
-    # running "python cars/do_iterations_cars.py" or cd cars && python ... is expected.
-    # Relative imports like 'from .track_cars' only work in packages.
-    # We will assume this script is run such that track_cars is importable.
-    import sys
-    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    from track_cars import fetch_items_on_page
-    from populate_database_cars import store_new_json_files_in_db
+    # Fallback to local import if strictly in the same package (unlikely here) or direct execution
+    try:
+        from track_cars import fetch_items_on_page
+        from populate_database_cars import store_new_json_files_in_db
+    except ImportError:
+        # If we are running from cars root like python3 src/scraping/do_iterations_cars.py
+        import sys
+        # Add src/scraping and src/processing to path? No, better to add root of project.
+        # Assuming current dir is cars/ and we want to import relative to src.
+        # But moving forward, let's assume we run with python -m src.scraping.do_iterations_cars
+        print("Import Error: best run as 'python3 -m src.scraping.do_iterations_cars' from cars/ folder")
+        raise
 
 # Define base directory relative to this script
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def load_existing_finn_ids(db_name='listings.db'):
     """Load existing finn_ids from the database into a set."""

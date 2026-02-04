@@ -6,9 +6,9 @@ from collections import defaultdict
 from pathlib import Path
 
 # Configuration
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 JSON_DATA_DIR = BASE_DIR / 'json_data'
-OUTPUT_FILE = BASE_DIR / 'market_knowledge.json'
+OUTPUT_FILE = BASE_DIR / 'rankings_data' / 'market_knowledge.json'
 
 def get_all_cars():
     """Generator to yield all car data from json_data directory."""

@@ -4,8 +4,8 @@ from bs4 import BeautifulSoup
 import json
 from datetime import datetime
 
-# Define base directory relative to this script
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Define base directory relative to this script (src/scraping/ -> src/ -> cars/)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def save_json_to_file(data, file_path):
     """Save JSON data to a file."""
@@ -151,13 +151,13 @@ def fetch_and_save_item(url, error_count, index_of_solgt):
             # -------------------------------------
 
             # Extract breadcrumb for directory structure
-            breadcrumb = extract_breadcrumb(soup)
+            # breadcrumb = extract_breadcrumb(soup)
             
             # Directory: cars/json_data/cars_DATE/breadcrumb...
             today_str = datetime.now().strftime('%d%m%Y')
             
             # Build path
-            path_parts = [BASE_DIR, "json_data", f"cars_{today_str}"] + breadcrumb + [finn_id]
+            path_parts = [BASE_DIR, "json_data", f"cars_{today_str}", finn_id]
             breadcrumb_path = os.path.join(*path_parts)
 
             # Save the parsed JSON data
@@ -331,9 +331,8 @@ def get_downloaded_ids():
     for date_dir in os.listdir(json_data_dir):
         date_path = os.path.join(json_data_dir, date_dir)
         if os.path.isdir(date_path) and date_dir.startswith("cars_"):
-            # Walk through car ID directories
+            # Simplified: Assume IDs are immediate subdirectories of cars_DATE
             for item in os.listdir(date_path):
-                # item is likely the finn_id (folder name)
                 if item.isdigit():
                     existing_ids.add(item)
     

@@ -3,8 +3,8 @@ import json
 import sqlite3
 from datetime import datetime
 
-# Define base directory relative to this script
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Define base directory relative to this script (src/processing/ -> src/ -> cars/)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def create_database(db_name='listings.db'):
     """Create a SQLite database and tables for storing listings and processed folders."""
