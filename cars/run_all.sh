@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 
 echo "=== STEP 1: SCRAPING ==="
