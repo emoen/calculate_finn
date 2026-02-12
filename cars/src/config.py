@@ -7,8 +7,10 @@ SRC_DIR = Path(__file__).resolve().parent
 BASE_DIR = SRC_DIR.parent
 
 # Define common data directories
-JSON_DATA_DIR = BASE_DIR / "json_data"
-RANKINGS_DATA_DIR = BASE_DIR / "rankings_data"
+JSON_DATA_DIR = BASE_DIR / "data_json"
+RANKINGS_DATA_DIR = BASE_DIR / "data_ranking"
+DATA_REVIEWS_DIR = BASE_DIR / "data_reviews"
+COMPRESSED_REVIEWS_DIR = BASE_DIR / "data_reviews_compressed"
 WEB_DIR = BASE_DIR / "web"
 
 def get_base_dir():

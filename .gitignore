@@ -8,6 +8,11 @@ __pycache__/
 calculate/
 json_data/
 
+cars/data_json/
+cars/data_rankings/
+cars/data_reviews_compressed/
+cars/web/
+
 
 # C extensions
 *.so
