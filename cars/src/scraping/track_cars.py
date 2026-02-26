@@ -2,8 +2,9 @@ import os
 import requests
 from bs4 import BeautifulSoup
 import json
+import argparse
 from datetime import datetime
-from src.config import BASE_DIR
+from src.config import BASE_DIR, JSON_DATA_DIR
 
 # Use configuration from src.config
 # BASE_DIR is already imported
@@ -19,12 +20,17 @@ def save_json_to_file(data, file_path):
     print(f"JSON data saved to {file_path}")
 
 
-def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0, page_number=1):
+def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0, page_number=1, limit=None):
     """Fetch the list of cars and save it as a JSON file."""
     consecutive_existing_count = 0
+    new_cars_fetched = 0
 
     while True:
         try:
+            if limit and new_cars_fetched >= limit:
+                print(f"Limit of {limit} new cars reached. Stopping.")
+                return error_count, index_of_solgt
+
             print(f"**** page {page_number} ****")
 
             if '?' in base_url:
@@ -78,6 +84,11 @@ def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0,
 
                 error_count, index_of_solgt = fetch_and_save_item(
                     url, error_count, index_of_solgt)
+
+                new_cars_fetched += 1
+                if limit and new_cars_fetched >= limit:
+                    print(f"Limit of {limit} new cars reached. Stopping.")
+                    return error_count, index_of_solgt
 
             # Check for the "next" page link - just for logging/debugging
             next_page = soup.find('a', rel='next', href=True)
@@ -158,8 +169,7 @@ def fetch_and_save_item(url, error_count, index_of_solgt):
             today_str = datetime.now().strftime('%d%m%Y')
             
             # Build path
-            path_parts = [BASE_DIR, "json_data", f"cars_{today_str}", finn_id]
-            breadcrumb_path = os.path.join(*path_parts)
+            breadcrumb_path = JSON_DATA_DIR / f"cars_{today_str}" / finn_id
 
             # Save the parsed JSON data
             json_file_path = os.path.join(breadcrumb_path, f"{finn_id}.json")
@@ -291,10 +301,10 @@ def extract_urls(html_content):
 def save_urls_to_json(urls, page_number):
     """Save page URLs to a JSON file in the breadcrumb path, under pages/"""
     breadcrumb_path = os.path.join(
-        BASE_DIR, "json_data", f"cars_{datetime.now().strftime('%d%m%Y')}", "pages")
+        BASE_DIR, "datJSON_DATA_DIR / f"cars_{datetime.now().strftime('%d%m%Y')}" / "pages"
     
     # Verify directory exists
-    if not os.path.exists(breadcrumb_path):
+    if not os.path.exists(breadcrumb_path):adcrumb_path):
         os.makedirs(breadcrumb_path)
         
     file_path = os.path.join(breadcrumb_path, f"page_{page_number}_urls.json")
@@ -305,7 +315,7 @@ def save_urls_to_json(urls, page_number):
 def log_solgt_url(url, index, error_message):
     """Log the URL to solgt.txt and create a numbered error log in the specified directory."""
     today = datetime.now().strftime('%d%m%Y')
-    solgt_directory = os.path.join(BASE_DIR, "json_data", f"cars_{today}", "solgt")
+    solgt_directory = JSON_DATA_DIR / f"cars_{today}" / "solgt"
     if not os.path.exists(solgt_directory):
         os.makedirs(solgt_directory)
 
@@ -323,14 +333,13 @@ def log_solgt_url(url, index, error_message):
 def get_downloaded_ids():
     """Scan json_data directory for already downloaded car IDs."""
     existing_ids = set()
-    json_data_dir = os.path.join(BASE_DIR, "json_data")
     
-    if not os.path.exists(json_data_dir):
+    if not os.path.exists(JSON_DATA_DIR):
         return existing_ids
 
     # Walk through all date directories (e.g., cars_20012026)
-    for date_dir in os.listdir(json_data_dir):
-        date_path = os.path.join(json_data_dir, date_dir)
+    for date_dir in os.listdir(JSON_DATA_DIR):
+        date_path = os.path.join(JSON_DATA_DIR, date_dir)
         if os.path.isdir(date_path) and date_dir.startswith("cars_"):
             # Simplified: Assume IDs are immediate subdirectories of cars_DATE
             for item in os.listdir(date_path):
@@ -342,12 +351,18 @@ def get_downloaded_ids():
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Fetch car listings from Finn.no")
+    parser.add_argument("--limit", type=int, default=None, help="Limit the number of new cars to fetch")
+    args = parser.parse_args()
+
     # Base URL for cars
     base_url = 'https://www.finn.no/mobility/search/car?registration_class=1'
     print("Fetching all car items...")
+    if args.limit:
+        print(f"Limiting to {args.limit} new items.")
     
     existing_ids = get_downloaded_ids()
-    fetch_items_on_page(base_url, existing_ids)
+    fetch_items_on_page(base_url, existing_ids, limit=args.limit)
 
 
 if __name__ == "__main__":

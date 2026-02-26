@@ -133,7 +133,7 @@ def process_json_files(directory):
 def store_new_json_files_in_db():
     """Store new JSON files in the database."""
     # Directory for today's listings relative to script
-    base_directory = os.path.join(BASE_DIR, 'json_data')
+    base_directory = os.path.join(BASE_DIR, 'data_json')
     if not os.path.exists(base_directory):
         os.makedirs(base_directory)
         
