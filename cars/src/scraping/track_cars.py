@@ -20,10 +20,34 @@ def save_json_to_file(data, file_path):
     print(f"JSON data saved to {file_path}")
 
 
+def extract_finn_id(url):
+    """Extract normalized numeric FINN ID from URL."""
+    if not url:
+        return None
+
+    cleaned = url.split('?', 1)[0].split('#', 1)[0].rstrip('/')
+    finn_id = cleaned.split('/')[-1]
+    if finn_id.endswith('.html'):
+        finn_id = finn_id[:-5]
+
+    return finn_id if finn_id.isdigit() else None
+
+
+def finn_id_exists_anywhere(finn_id):
+    """Check if a FINN ID directory already exists in any cars_DATE folder."""
+    for date_dir in JSON_DATA_DIR.glob("cars_*"):
+        if (date_dir / finn_id).is_dir():
+            return True
+    return False
+
+
 def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0, page_number=1, limit=None):
     """Fetch the list of cars and save it as a JSON file."""
     consecutive_existing_count = 0
     new_cars_fetched = 0
+    seen_page_signatures = set()
+    consecutive_no_new_pages = 0
+    max_consecutive_no_new_pages = 3
 
     while True:
         try:
@@ -58,20 +82,30 @@ def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0,
                     break
                 # Only strictly break if no items and usually that means end of results.
 
+            page_finn_ids = tuple(sorted({finn_id for item_url in filtered_urls if (finn_id := extract_finn_id(item_url))}))
+            if not page_finn_ids:
+                print(f"No valid FINN IDs found on page {page_number}. Stopping.")
+                break
+
+            if page_finn_ids in seen_page_signatures:
+                print(f"Page {page_number} repeats previously seen listings. Stopping pagination.")
+                break
+
+            seen_page_signatures.add(page_finn_ids)
+
+            new_saved_on_page = 0
+
             # Fetch and save JSON data for each URL
             for url in filtered_urls:
                 # Cars URL: https://www.finn.no/mobility/item/366152300
                 # Extract ID.
-                try:
-                    finn_id = url.split('/')[-1]
-                    # Handle cases like "12345" or "12345.html" or query params
-                    if '?' in finn_id:
-                        finn_id = finn_id.split('?')[0]
-                except Exception:
+                finn_id = extract_finn_id(url)
+                if not finn_id:
                     print(f"Could not parse ID from {url}")
                     continue
 
-                if finn_id in existing_ids:
+                if finn_id in existing_ids or finn_id_exists_anywhere(finn_id):
+                    existing_ids.add(finn_id)
                     consecutive_existing_count += 1
                     if consecutive_existing_count % 50 == 0:
                         print(f"Skipped {consecutive_existing_count} existing cars...")
@@ -82,18 +116,33 @@ def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0,
                 else:
                     consecutive_existing_count = 0
 
-                error_count, index_of_solgt = fetch_and_save_item(
-                    url, error_count, index_of_solgt)
+                error_count, index_of_solgt, saved = fetch_and_save_item(
+                    url, finn_id, error_count, index_of_solgt)
 
-                new_cars_fetched += 1
+                if saved:
+                    existing_ids.add(finn_id)
+                    new_cars_fetched += 1
+                    new_saved_on_page += 1
                 if limit and new_cars_fetched >= limit:
                     print(f"Limit of {limit} new cars reached. Stopping.")
                     return error_count, index_of_solgt
 
-            # Check for the "next" page link - just for logging/debugging
+            if new_saved_on_page == 0:
+                consecutive_no_new_pages += 1
+                print(
+                    f"No new cars saved on page {page_number} "
+                    f"({consecutive_no_new_pages}/{max_consecutive_no_new_pages} consecutive)."
+                )
+                if consecutive_no_new_pages >= max_consecutive_no_new_pages:
+                    print("Reached consecutive no-new-pages threshold. Stopping pagination.")
+                    break
+            else:
+                consecutive_no_new_pages = 0
+
+            # 'next' link can be unreliable on FINN; use it only for logging
             next_page = soup.find('a', rel='next', href=True)
             if not next_page:
-                print(f"Note: 'Next' link not found on page {page_number}. Continuing based on URL increment.")
+                print(f"Note: 'Next' link not found on page {page_number}. Continuing with page increment.")
             
             page_number += 1
             
@@ -109,8 +158,11 @@ def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0,
     return error_count, index_of_solgt
 
 
-def fetch_and_save_item(url, error_count, index_of_solgt):
+def fetch_and_save_item(url, finn_id, error_count, index_of_solgt):
     """Fetch JSON data for a listing and save it in the appropriate directory."""
+    if finn_id_exists_anywhere(finn_id):
+        return error_count, index_of_solgt, False
+
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -143,11 +195,6 @@ def fetch_and_save_item(url, error_count, index_of_solgt):
                     continue
         
         if data:
-            # Prepare data to save
-            finn_id = url.split('/')[-1]
-            if '?' in finn_id:
-                finn_id = finn_id.split('?')[0]
-            
             # Add finn_id explicitly if missing
             if 'finn_id' not in data:
                 data['finn_id'] = finn_id
@@ -179,6 +226,7 @@ def fetch_and_save_item(url, error_count, index_of_solgt):
                 if isinstance(images, str):
                     images = [images]
                 download_images(images, breadcrumb_path)
+            return error_count, index_of_solgt, True
         else:
             # Could not find data
             log_solgt_url(url, index_of_solgt, "No JSON-LD data found")
@@ -195,7 +243,7 @@ def fetch_and_save_item(url, error_count, index_of_solgt):
         print(f"Unexpected error for {url}: {e}")
         error_count += 1
 
-    return error_count, index_of_solgt
+    return error_count, index_of_solgt, False
 
 
 def log_error(directory, message):
@@ -297,16 +345,10 @@ def extract_urls(html_content):
 
 def save_urls_to_json(urls, page_number):
     """Save page URLs to a JSON file in the breadcrumb path, under pages/"""
-    breadcrumb_path = os.path.join(
-        BASE_DIR, "datJSON_DATA_DIR / f"cars_{datetime.now().strftime('%d%m%Y')}" / "pages"
-    
-    # Verify directory exists
-    if not os.path.exists(breadcrumb_path):adcrumb_path):
-        os.makedirs(breadcrumb_path)
-        
-    file_path = os.path.join(breadcrumb_path, f"page_{page_number}_urls.json")
-
-    save_json_to_file(urls, file_path)
+    breadcrumb_path = JSON_DATA_DIR / f"cars_{datetime.now().strftime('%d%m%Y')}" / "pages"
+    os.makedirs(breadcrumb_path, exist_ok=True)
+    file_path = breadcrumb_path / f"page_{page_number}_urls.json"
+    save_json_to_file(urls, str(file_path))
 
 
 def log_solgt_url(url, index, error_message):
