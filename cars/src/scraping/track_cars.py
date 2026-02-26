@@ -161,11 +161,8 @@ def fetch_and_save_item(url, error_count, index_of_solgt):
                 if full_description:
                     data['description'] = full_description
             # -------------------------------------
-
-            # Extract breadcrumb for directory structure
-            # breadcrumb = extract_breadcrumb(soup)
             
-            # Directory: cars/json_data/cars_DATE/breadcrumb...
+            # Directory: cars/data_json/cars_DATE/finn_id...
             today_str = datetime.now().strftime('%d%m%Y')
             
             # Build path
