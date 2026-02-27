@@ -190,6 +190,8 @@ def main():
             market_stats["brands"][key] = stats
             
     print(f"Generated extended stats for {len(market_stats['models'])} models and {len(market_stats['brands'])} brands.")
+
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         json.dump(market_stats, f, indent=4)
