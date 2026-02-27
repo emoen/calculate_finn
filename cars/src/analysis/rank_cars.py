@@ -331,7 +331,7 @@ def main():
                 except Exception as e:
                     print(f"Error processing {file_path}: {e}")
 
-    print(f"Finished. Ranked {count} new cars.")
+    print(f"SUMMARY: Ranked {count} new cars.")
 
 if __name__ == "__main__":
     main()

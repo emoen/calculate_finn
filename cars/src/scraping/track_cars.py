@@ -53,7 +53,7 @@ def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0,
         try:
             if limit and new_cars_fetched >= limit:
                 print(f"Limit of {limit} new cars reached. Stopping.")
-                return error_count, index_of_solgt
+                return new_cars_fetched, error_count
 
             print(f"**** page {page_number} ****")
 
@@ -124,7 +124,7 @@ def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0,
                     new_saved_on_page += 1
                 if limit and new_cars_fetched >= limit:
                     print(f"Limit of {limit} new cars reached. Stopping.")
-                    return error_count, index_of_solgt
+                    return new_cars_fetched, error_count
 
             if new_saved_on_page == 0:
                 consecutive_no_new_pages += 1
@@ -154,7 +154,7 @@ def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0,
             print(f"Total number of items with errors: {error_count}")
             break
 
-    return error_count, index_of_solgt
+    return new_cars_fetched, error_count
 
 
 def fetch_and_save_item(url, finn_id, error_count, index_of_solgt):
@@ -430,7 +430,8 @@ def main():
         print(f"Limiting to {args.limit} new items.")
     
     existing_ids = get_downloaded_ids()
-    fetch_items_on_page(base_url, existing_ids, limit=args.limit)
+    new_cars_count, total_errors = fetch_items_on_page(base_url, existing_ids, limit=args.limit)
+    print(f"SUMMARY: Fetched {new_cars_count} new cars. Total errors: {total_errors}")
 
 
 if __name__ == "__main__":

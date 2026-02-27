@@ -78,6 +78,8 @@ def main():
         print(df.describe())
     else:
         print("Not enough overlapping scores for correlation analysis.")
+    
+    print(f"SUMMARY: Merged scores for {len(combined)} cars. (ML: {len(ml_scores)}, LLM: {len(llm_scores)})")
 
 if __name__ == "__main__":
     main()

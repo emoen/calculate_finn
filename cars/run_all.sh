@@ -18,23 +18,35 @@ LIMIT_ARGS=""
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --limit) LIMIT_ARGS="--limit $2"; shift ;;
-        --test) LIMIT_ARGS="--limit 10" ;;
+        --test) LIMIT_ARGS="--limit 100" ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
 done
 
-echo "=== STEP 1: SCRAPING ==="
-echo "Args: $LIMIT_ARGS"
-./run_scraping.sh $LIMIT_ARGS
+LOG_FILE="execution.log"
+> "$LOG_FILE"
 
-echo "=== STEP 2: PROCESSING ==="
-./run_processing.sh
+echo "Logging output to $LOG_FILE"
 
-echo "=== STEP 3: ANALYSIS ==="
-./run_analysis.sh
+echo "=== STEP 1: SCRAPING ===" | tee -a "$LOG_FILE"
+echo "Args: $LIMIT_ARGS" | tee -a "$LOG_FILE"
+./run_scraping.sh $LIMIT_ARGS 2>&1 | tee -a "$LOG_FILE"
 
-echo "=== STEP 4: VISUALIZATION ==="
-./run_web.sh
+echo "=== STEP 2: PROCESSING ===" | tee -a "$LOG_FILE"
+./run_processing.sh 2>&1 | tee -a "$LOG_FILE"
 
-echo "All tasks completed."
+echo "=== STEP 3: ANALYSIS ===" | tee -a "$LOG_FILE"
+./run_analysis.sh 2>&1 | tee -a "$LOG_FILE"
+
+echo "=== STEP 4: VISUALIZATION ===" | tee -a "$LOG_FILE"
+./run_web.sh 2>&1 | tee -a "$LOG_FILE"
+
+echo "All tasks completed." | tee -a "$LOG_FILE"
+
+echo ""
+echo "============================================"
+echo "           EXECUTION SUMMARY                "
+echo "============================================"
+grep "SUMMARY:" "$LOG_FILE" || true
+echo "============================================"

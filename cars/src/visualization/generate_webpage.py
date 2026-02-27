@@ -628,3 +628,4 @@ if __name__ == "__main__":
     rankings = load_data()
     print(f"Loaded {len(rankings)} cars.")
     generate_html(rankings)
+    print(f"SUMMARY: Generated index.html with {len(rankings)} cars.")

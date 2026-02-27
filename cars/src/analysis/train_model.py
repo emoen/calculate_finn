@@ -270,7 +270,7 @@ def train_and_score():
     with open(SCORES_OUTPUT_FILE, 'w', encoding='utf-8') as f:
         json.dump(scores_dict, f, indent=4)
         
-    print("Done.")
+    print(f"SUMMARY: Model trained. MAE: {mae:.2f}, R2: {r2:.2f}. Scores generated for {len(scores_dict)} cars.")
 
 if __name__ == "__main__":
     train_and_score()

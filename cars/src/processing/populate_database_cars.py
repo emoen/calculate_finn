@@ -91,11 +91,12 @@ def process_json_files(directory):
     conn = create_database()
     existing_ids = load_existing_finn_ids(conn)
     folder_name = os.path.basename(directory)
+    new_inserted = 0
 
     if is_folder_processed(conn, folder_name):
         print(f"Folder {folder_name} has already been processed.")
         conn.close()
-        return
+        return 0
 
     for root, _, files in os.walk(directory):
         for file in files:
@@ -114,6 +115,7 @@ def process_json_files(directory):
                             if listing_id not in existing_ids:
                                 insert_listing(conn, listing_id, data)
                                 existing_ids.add(listing_id)
+                                new_inserted += 1
                         
                         elif isinstance(data, list):
                             print(f"Skipping list file {file_path}")
@@ -124,6 +126,7 @@ def process_json_files(directory):
 
     mark_folder_as_processed(conn, folder_name)
     conn.close()
+    return new_inserted
 
 
 def store_new_json_files_in_db():
@@ -144,12 +147,14 @@ def store_new_json_files_in_db():
     print("Updating older folders to done status if applicable...")
     update_folders_to_done(conn)
     
+    total_added = 0
     for directory in directories:
         full_path = os.path.join(base_directory, directory)
         print(f"Checking/Processing JSON files in {full_path}...")
-        process_json_files(full_path)
+        total_added += process_json_files(full_path)
 
     conn.close()
+    print(f"SUMMARY: Added {total_added} cars to database.")
 
 
 if __name__ == "__main__":
