@@ -12,7 +12,7 @@ OUTPUT_FILE = RANKINGS_DATA_DIR / 'market_knowledge.json'
 def get_all_cars():
     """Generator to yield all car data from json_data directory."""
     for root, dirs, files in os.walk(JSON_DATA_DIR):
-        if 'pages' in root.split(os.sep) or 'solgt' in root.split(os.sep):
+        if 'solgt' in root.split(os.sep):
             continue
             
         for file in files:

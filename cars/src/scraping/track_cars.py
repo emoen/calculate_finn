@@ -73,7 +73,6 @@ def fetch_items_on_page(base_url, existing_ids, error_count=0, index_of_solgt=0,
 
             # Filter out URLs containing 'ad.html' just in case
             filtered_urls = [url for url in urls if 'ad.html' not in url]
-            save_urls_to_json(filtered_urls, page_number)
 
             if not filtered_urls:
                 print("No URLs found on this page.")
@@ -379,14 +378,6 @@ def extract_technical_specs(soup):
                 specs[normalized_key] = value
 
     return specs
-
-
-def save_urls_to_json(urls, page_number):
-    """Save page URLs to a JSON file in the breadcrumb path, under pages/"""
-    breadcrumb_path = JSON_DATA_DIR / f"cars_{datetime.now().strftime('%d%m%Y')}" / "pages"
-    os.makedirs(breadcrumb_path, exist_ok=True)
-    file_path = breadcrumb_path / f"page_{page_number}_urls.json"
-    save_json_to_file(urls, str(file_path))
 
 
 def log_solgt_url(url, index, error_message):

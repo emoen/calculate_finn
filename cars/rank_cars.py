@@ -206,8 +206,8 @@ def main():
     count = 0
     # Walk through the json_data directory
     for root, dirs, files in os.walk(JSON_DATA_DIR):
-        # Skip 'pages' directories and 'solgt' directories if any
-        if 'pages' in root.split(os.sep) or 'solgt' in root.split(os.sep):
+        # Skip 'solgt' directories if any
+        if 'solgt' in root.split(os.sep):
             continue
 
         for file in files:

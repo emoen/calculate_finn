@@ -8,10 +8,6 @@ def find_duplicate_leaf_folders(base_directory):
     duplicates = []
 
     for root, dirs, files in os.walk(base_directory):
-        # Ignore the 'pages' directory
-        if 'pages' in root.split(os.sep):
-            continue
-
         # Check if the current directory is a leaf directory
         if not dirs:
             folder_name = os.path.basename(root)

@@ -98,10 +98,6 @@ def process_json_files(directory):
         return
 
     for root, _, files in os.walk(directory):
-        # Skip directories named 'pages'
-        if 'pages' in root.split(os.sep):
-            continue
-
         for file in files:
             if file.endswith('.json'):
                 file_path = os.path.join(root, file)

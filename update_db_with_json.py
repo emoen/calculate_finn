@@ -26,10 +26,6 @@ def process_json_files(base_directory):
     conn = create_database_connection()
 
     for root, dirs, files in os.walk(base_directory):
-        # Skip directories named 'pages'
-        if 'pages' in root.split(os.sep):
-            continue
-
         # Check if the directory is a 'torget_<date>' directory
         if os.path.basename(root).startswith('torget_'):
             for file in files:
