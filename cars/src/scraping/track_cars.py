@@ -207,6 +207,14 @@ def fetch_and_save_item(url, finn_id, error_count, index_of_solgt):
                 full_description = desc_div.get_text(separator='\n', strip=True)
                 if full_description:
                     data['description'] = full_description
+
+            technical_specs = extract_technical_specs(soup)
+            if technical_specs:
+                data['technical_specs'] = technical_specs
+                for key, value in technical_specs.items():
+                    if key not in data:
+                        data[key] = value
+            print(f"Technical specs found for {finn_id}: {'yes' if technical_specs else 'no'}")
             # -------------------------------------
             
             # Directory: cars/data_json/cars_DATE/finn_id...
@@ -341,6 +349,36 @@ def extract_urls(html_content):
                 urls.append(href)
                 
     return urls
+
+
+def extract_technical_specs(soup):
+    """Extract normalized technical specs from FINN listing details."""
+    specs = {}
+    mapping = {
+        "Reg.nr.": "registration_number",
+        "Registreringsnummer": "registration_number",
+        "Chassis nr. (VIN)": "vin",
+        "EU-godkjent til": "eu_control_expires",
+        "Sist EU-godkjent": "last_eu_control",
+        "Effekt": "horsepower",
+        "Vekt": "weight",
+        "CO2-utslipp": "co2_emissions",
+    }
+
+    for dl in soup.find_all('dl'):
+        dts = dl.find_all('dt')
+        dds = dl.find_all('dd')
+        if len(dts) != len(dds):
+            continue
+
+        for dt, dd in zip(dts, dds):
+            key = dt.get_text(strip=True).replace(':', '')
+            value = dd.get_text(strip=True)
+            normalized_key = mapping.get(key)
+            if normalized_key and value:
+                specs[normalized_key] = value
+
+    return specs
 
 
 def save_urls_to_json(urls, page_number):
