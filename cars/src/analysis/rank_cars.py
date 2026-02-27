@@ -39,6 +39,7 @@ def get_existing_rankings():
 
 def save_rankings(rankings):
     """Save rankings to the metadata file."""
+    METADATA_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(METADATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(rankings, f, indent=4, ensure_ascii=False)
 

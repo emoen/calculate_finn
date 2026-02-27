@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Try to activate virtual environment if not already active
 if [ -z "$VIRTUAL_ENV" ]; then
@@ -10,7 +10,7 @@ if [ -z "$VIRTUAL_ENV" ]; then
     fi
 fi
 
-export PYTHONPATH=$PYTHONPATH:$(pwd)
+export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
 
 LIMIT_ARGS=""
 

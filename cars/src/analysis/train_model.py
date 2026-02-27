@@ -267,6 +267,7 @@ def train_and_score():
         scores_dict[str(row['finn_id'])] = round(row['ml_score'], 2)
         
     print(f"Saving scores to {SCORES_OUTPUT_FILE}...")
+    SCORES_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(SCORES_OUTPUT_FILE, 'w', encoding='utf-8') as f:
         json.dump(scores_dict, f, indent=4)
         
