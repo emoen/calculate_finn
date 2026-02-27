@@ -6,9 +6,9 @@ from pathlib import Path
 from src.config import DATA_REVIEWS_DIR, BASE_DIR
 
 # Configuration moved from enrich_reviews.py
-MODEL_KEY = "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"
+MODEL_KEY = "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" 
 # Recommended free model for high-context extraction
-MODEL_NAME = "arcee-ai/trinity-large-preview:free"
+MODEL_NAME = "arcee-ai/trinity-mini:free"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 COMPRESSED_DIR = BASE_DIR / "data_reviews_compressed"

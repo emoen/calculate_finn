@@ -6,9 +6,9 @@ from datetime import datetime
 from src import config
 
 # Configuration
-OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_KEY = "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" #"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"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "xiaomi/mimo-v2-flash:free"
+MODEL = "arcee-ai/trinity-large-preview:free" #"xiaomi/mimo-v2-flash:free"
 
 BASE_DIR = config.BASE_DIR
 METADATA_FILE = config.RANKINGS_DATA_DIR / "rankings.json"

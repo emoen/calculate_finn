@@ -29,6 +29,9 @@ LOG_FILE="execution.log"
 
 echo "Logging output to $LOG_FILE"
 
+echo "=== MODEL CHECK ===" | tee -a "$LOG_FILE"
+python3 src/check_models.py 2>&1 | tee -a "$LOG_FILE"
+
 echo "=== STEP 1: SCRAPING ===" | tee -a "$LOG_FILE"
 echo "Args: $LIMIT_ARGS" | tee -a "$LOG_FILE"
 ./run_scraping.sh $LIMIT_ARGS 2>&1 | tee -a "$LOG_FILE"
