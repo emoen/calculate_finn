@@ -1,10 +1,11 @@
 import os
 import json
 import statistics
-import re
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 from src.config import BASE_DIR, JSON_DATA_DIR, RANKINGS_DATA_DIR
+from src.utils import extract_year, extract_mileage, normalize_brand
 
 # Configuration
 OUTPUT_FILE = RANKINGS_DATA_DIR / 'market_knowledge.json'
@@ -26,38 +27,9 @@ def get_all_cars():
 
 def normalize_key(brand, model):
     """Create a consistent key for grouping."""
-    b = str(brand).strip().lower()
+    b = normalize_brand(brand)
     m = str(model).strip().lower()
-    
-    # Common normalizations
-    if b == 'vw': b = 'volkswagen'
-    
     return f"{b} {m}"
-
-def extract_year(text):
-    """Extract 4-digit year starting with 20 or 19 from text."""
-    if not text: return None
-    match = re.search(r'\b(20[0-2][0-9]|19[5-9][0-9])\b', str(text))
-    if match:
-        return int(match.group(1))
-    return None
-
-def extract_mileage(text):
-    """Extract mileage in km from text."""
-    if not text: return None
-    # Matches patterns like "50 000 km", "50.000km", "50000 km"
-    match = re.search(r'(\d+[\s\.]?\d*)\s*(?:km|kilometer)', str(text).lower())
-    if match:
-        try:
-            # Clean string like "50 000" -> "50000"
-            clean_num = match.group(1).replace(' ', '').replace('.', '')
-            val = int(clean_num)
-            # Sanity check: Car with > 1M km is unlikely or error
-            if 0 < val < 1000000:
-                return val
-        except:
-            pass
-    return None
 
 def calculate_stats(prices):
     if not prices:
@@ -148,7 +120,7 @@ def main():
     market_stats = {
         "metadata": {
             "total_listings": count,
-            "generated_at": str(os.path.getmtime(__file__)) 
+            "generated_at": datetime.now().isoformat() 
         },
         "models": {},
         "brands": {}

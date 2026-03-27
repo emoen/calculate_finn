@@ -1,15 +1,17 @@
 import os
 import json
-import re
 import pandas as pd
 import numpy as np
 from pathlib import Path
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_absolute_error, r2_score
 import joblib
 from src.config import BASE_DIR, JSON_DATA_DIR, RANKINGS_DATA_DIR
+from src.utils import extract_year, extract_mileage, normalize_brand
 
 # Configuration
 # Keep hardcoded subfolder for now as it was specific
@@ -33,29 +35,17 @@ def extract_features_from_text(text):
     text = normalize_string(text)
     features = {}
     
-    # Year
-    year_match = re.search(r'\b(20[0-2][0-9]|19[5-9][0-9])\b', text)
-    if year_match:
-        features['year'] = int(year_match.group(1))
-        
-    # Mileage
-    # Matches patterns like "50 000 km", "50.000km", "50000 km"
-    km_match = re.search(r'(\d+[\s\.]?\d*)\s*(?:km|kilometer)', text)
-    if km_match:
-        try:
-            clean_num = km_match.group(1).replace(' ', '').replace('.', '')
-            val = int(clean_num)
-            if 0 < val < 1000000:
-                features['mileage'] = val
-        except:
-            pass
+    # Year and Mileage from shared utils
+    features['year'] = extract_year(text)
+    features['mileage'] = extract_mileage(text)
 
     # Horsepower
+    import re
     hk_match = re.search(r'(\d+)\s*(?:hk|hester)', text)
     if hk_match:
         try:
             features['power'] = int(hk_match.group(1))
-        except:
+        except (ValueError, TypeError):
             pass
             
     # Fuel
@@ -148,8 +138,7 @@ def get_car_data(market_data):
                 }
                 
                 # Add Market Context
-                brand_key = car_entry['brand']
-                if brand_key == 'vw': brand_key = 'volkswagen'
+                brand_key = normalize_brand(car_entry['brand'])
                 model_key = f"{brand_key} {car_entry['model']}"
                 
                 market_avg = None
@@ -207,17 +196,24 @@ def train_and_score():
     df['power'] = df['power'].fillna(df['power'].median())
     df['market_avg'] = df['market_avg'].fillna(df['price']) # Fallback to own price minimizes error for unknown models
     
-    # Encode categorical
-    le_brand = LabelEncoder()
-    df['brand_encoded'] = le_brand.fit_transform(df['brand'].astype(str))
+    # Define feature columns
+    numeric_features = ['year', 'mileage', 'power', 'market_avg']
+    categorical_features = ['brand', 'fuel', 'transmission']
     
-    le_fuel = LabelEncoder()
-    df['fuel_encoded'] = le_fuel.fit_transform(df['fuel'].astype(str))
+    # Build a Pipeline with OneHotEncoder for categorical features
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', 'passthrough', numeric_features),
+            ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), categorical_features),
+        ]
+    )
+    
+    pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('regressor', RandomForestRegressor(n_estimators=100, random_state=42)),
+    ])
 
-    le_trans = LabelEncoder()
-    df['trans_encoded'] = le_trans.fit_transform(df['transmission'].astype(str))
-
-    features = ['year', 'mileage', 'power', 'market_avg', 'brand_encoded', 'fuel_encoded', 'trans_encoded']
+    features = numeric_features + categorical_features
     target = 'price'
     
     # Train
@@ -227,18 +223,17 @@ def train_and_score():
     # Split for validation
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    print("Training Random Forest Regressor...")
-    model = RandomForestRegressor(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
+    print("Training Random Forest Regressor with OneHotEncoder...")
+    pipeline.fit(X_train, y_train)
     
-    y_pred = model.predict(X_test)
+    y_pred = pipeline.predict(X_test)
     mae = mean_absolute_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
     
     print(f"Model Performance: MAE={mae:.2f}, R2={r2:.2f}")
     
     # Predict for ALL cars
-    full_predictions = model.predict(X)
+    full_predictions = pipeline.predict(X)
     df['predicted_price'] = full_predictions
     
     # Calculate Score

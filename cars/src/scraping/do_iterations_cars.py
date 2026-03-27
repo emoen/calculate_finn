@@ -76,7 +76,7 @@ def main():
         base_url = 'https://www.finn.no/mobility/search/car?registration_class=1'
 
         # Fetch items, passing the existing_ids set and current counts
-        error_count, index_of_solgt = fetch_items_on_page(
+        new_cars_fetched, error_count = fetch_items_on_page(
             base_url, existing_ids, error_count, index_of_solgt)
 
         # Store new JSON files in the database

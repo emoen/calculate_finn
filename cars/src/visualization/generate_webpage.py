@@ -1,3 +1,4 @@
+import html
 import json
 import os
 from pathlib import Path
@@ -463,10 +464,10 @@ def generate_html(sorted_items):
         except:
              score_float = 0
              
-        name = data.get('name', 'MYSTERY MACHINE')
-        price = data.get('price', 'CALL US!')
-        reason = data.get('reason', 'IT JUST WORKS!')
-        url = data.get('url', '#')
+        name = html.escape(str(data.get('name', 'MYSTERY MACHINE')))
+        price = html.escape(str(data.get('price', 'CALL US!')))
+        reason = html.escape(str(data.get('reason', 'IT JUST WORKS!')))
+        url = html.escape(str(data.get('url', '#')))
         
         # Get extra details from JSON file
         details_path = data.get('path', '')
@@ -486,7 +487,7 @@ def generate_html(sorted_items):
         if isinstance(image_url, dict):
             image_url = image_url.get('url', image_url.get('contentUrl', 'https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg'))
                 
-        description = details.get('description', 'No description available. Trust us, it runs.')
+        description = html.escape(str(details.get('description', 'No description available. Trust us, it runs.')))
         
         score_class = "status-mid"
         badge_text = "Good Deal"

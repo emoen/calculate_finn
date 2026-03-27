@@ -6,7 +6,7 @@ from datetime import datetime
 from src import config
 
 # Configuration
-OPENROUTER_KEY = "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" #"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"
+OPENROUTER_KEY = "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" 
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "arcee-ai/trinity-large-preview:free" #"xiaomi/mimo-v2-flash:free"
 
@@ -39,21 +39,10 @@ def get_existing_rankings():
 
 def save_rankings(rankings):
     """Save rankings to the metadata file."""
-    METADATA_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(METADATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(rankings, f, indent=4, ensure_ascii=False)
 
-import re
-
-# ... existing imports ...
-
-# Helper to extract year (matches logic in build_market_knowledge.py)
-def extract_year(text):
-    if not text: return None
-    match = re.search(r'\b(20[0-2][0-9]|19[5-9][0-9])\b', str(text))
-    if match:
-        return int(match.group(1))
-    return None
+from src.utils import extract_year
 
 def get_review_data(brand, model):
     """

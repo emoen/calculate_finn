@@ -85,17 +85,20 @@ def is_folder_processed(conn, folder_name):
     return cursor.fetchone() is not None
 
 
-def process_json_files(directory):
+def process_json_files(directory, conn=None):
     """Process all JSON files in the given directory and insert them into the database."""
-    # Pass 'listings.db' (relative logic inside create_database will handle path)
-    conn = create_database()
+    close_conn = False
+    if conn is None:
+        conn = create_database()
+        close_conn = True
     existing_ids = load_existing_finn_ids(conn)
     folder_name = os.path.basename(directory)
     new_inserted = 0
 
     if is_folder_processed(conn, folder_name):
         print(f"Folder {folder_name} has already been processed.")
-        conn.close()
+        if close_conn:
+            conn.close()
         return 0
 
     for root, _, files in os.walk(directory):
@@ -125,7 +128,8 @@ def process_json_files(directory):
                     print(f"Error processing {file_path}: {e}")
 
     mark_folder_as_processed(conn, folder_name)
-    conn.close()
+    if close_conn:
+        conn.close()
     return new_inserted
 
 
@@ -151,7 +155,7 @@ def store_new_json_files_in_db():
     for directory in directories:
         full_path = os.path.join(base_directory, directory)
         print(f"Checking/Processing JSON files in {full_path}...")
-        total_added += process_json_files(full_path)
+        total_added += process_json_files(full_path, conn)
 
     conn.close()
     print(f"SUMMARY: Added {total_added} cars to database.")

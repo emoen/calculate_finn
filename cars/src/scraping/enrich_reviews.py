@@ -31,7 +31,7 @@ def get_unique_models():
                                     model = data.get('model')
                                     if brand and model:
                                         models.add((brand, model))
-                            except:
+                            except Exception:
                                 pass
     return sorted(list(models))
 
@@ -42,7 +42,7 @@ def fetch_review_content(url, source):
     Returns a dictionary with 'text' and 'summary' or None if failed.
     """
     try:
-        resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+        resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
         if resp.status_code != 200:
             return None
         
@@ -113,7 +113,7 @@ def search_broom(brand, model):
     
     reviews = []
     try:
-        resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+        resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, 'html.parser')
             # Look for article links
@@ -149,7 +149,7 @@ def get_bilnorge_brand_links():
     print("Fetching BilNorge brand index...")
     links = {}
     try:
-        resp = requests.get("https://www.bilnorge.no/biltester", headers={'User-Agent': 'Mozilla/5.0'})
+        resp = requests.get("https://www.bilnorge.no/biltester", headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, 'html.parser')
             for a in soup.find_all('a', href=True):
@@ -177,7 +177,7 @@ def get_bilnorge_reviews_for_brand(brand, brand_links):
     # print(f"  Fetching BilNorge reviews for {brand}...") # detailed logging
     reviews = []
     try:
-        resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+        resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, 'html.parser')
             # Extract articles
