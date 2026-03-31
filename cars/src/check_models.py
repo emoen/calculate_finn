@@ -12,22 +12,18 @@ if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
 try:
-    from src.analysis.rank_cars import OPENROUTER_KEY as RANK_KEY, MODEL as RANK_MODEL
-    from src.processing.compress_reviews import MODEL_KEY as COMPRESS_KEY, MODEL_NAME as COMPRESS_MODEL
+    from src.model_rotation import PROVIDERS
 except ImportError:
-    # Fallback/Debug if structure is slightly different or run from different CWD
     try:
-        from analysis.rank_cars import OPENROUTER_KEY as RANK_KEY, MODEL as RANK_MODEL
-        from processing.compress_reviews import MODEL_KEY as COMPRESS_KEY, MODEL_NAME as COMPRESS_MODEL
+        from model_rotation import PROVIDERS
     except ImportError as e:
         print(f"Error importing model configs: {e}")
         sys.exit(1)
 
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-def check_model(name, key, model):
+def check_model(api_url, key, model):
     if not key:
-        return f"{name}: FAIL (No Key)"
+        return f"  {model}: FAIL (No Key)"
     
     headers = {
         "Authorization": f"Bearer {key}",
@@ -41,20 +37,40 @@ def check_model(name, key, model):
     }
     
     try:
-        response = requests.post(API_URL, headers=headers, json=data, timeout=10)
+        response = requests.post(api_url, headers=headers, json=data, timeout=10)
         if response.status_code == 200:
-             return f"{name}: OK"
+             return f"  {model}: OK"
         else:
-             return f"{name}: FAIL ({response.status_code})"
+             return f"  {model}: FAIL ({response.status_code})"
     except Exception as e:
-        return f"{name}: FAIL ({str(e)})"
+        return f"  {model}: FAIL ({str(e)})"
 
 def main():
-    print("Checking model connectivity...")
+    print("Checking model connectivity...\n")
     
-    res2 = check_model("Compress Reviews", COMPRESS_KEY, COMPRESS_MODEL)
-    res1 = check_model("Rank Cars", RANK_KEY, RANK_MODEL)
-    print(f"SUMMARY: Model Check - {res1}, {res2}")
+    total_ok = 0
+    total_count = 0
+    
+    for provider in PROVIDERS:
+        name = provider["name"]
+        url = provider["url"]
+        key = provider["key"]
+        # Deduplicate models across ranking + compress for this provider
+        all_models = list(dict.fromkeys(
+            provider["ranking_models"] + provider["compress_models"]
+        ))
+        
+        print(f"--- {name} ({len(all_models)} models) ---")
+        for model in all_models:
+            result = check_model(url, key, model)
+            print(result)
+            total_count += 1
+            if "OK" in result:
+                total_ok += 1
+        print()
+    
+    fail_count = total_count - total_ok
+    print(f"SUMMARY: Model Check - {total_ok}/{total_count} OK, {fail_count} failed")
 
 if __name__ == "__main__":
     main()

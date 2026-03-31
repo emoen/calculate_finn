@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Try to activate virtual environment if not already active
-if [ -z "$VIRTUAL_ENV" ]; then
+if [ -z "${VIRTUAL_ENV:-}" ]; then
     if [ -f "../calculate/bin/activate" ]; then
         source ../calculate/bin/activate
     elif [ -f "calculate/bin/activate" ]; then

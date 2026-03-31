@@ -4,11 +4,9 @@ import requests
 import time
 from datetime import datetime
 from src import config
+from src.model_rotation import call_llm, get_current_model, OPENROUTER_KEY
 
-# Configuration
-OPENROUTER_KEY = "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" 
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "arcee-ai/trinity-large-preview:free" #"xiaomi/mimo-v2-flash:free"
 
 BASE_DIR = config.BASE_DIR
 METADATA_FILE = config.RANKINGS_DATA_DIR / "rankings.json"
@@ -123,43 +121,16 @@ def analyze_car(car_data, market_stats_text=None, review_data=None):
     - "reason": (string, a short explanation of the score, max 2 sentences)
     """
 
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_KEY}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/endrem/calculate_finn", # Required by OpenRouter for free tier identification
-        "X-Title": "Finn Car Ranker"
-    }
+    messages = [{"role": "user", "content": prompt}]
+    result = call_llm(
+        task="ranking",
+        messages=messages,
+        response_format={"type": "json_object"},
+        timeout=30,
+        referer="https://github.com/endrem/calculate_finn",
+        title="Finn Car Ranker",
+    )
 
-    payload = {
-        "model": MODEL,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "response_format": { "type": "json_object" } 
-    }
-
-    retries = 3
-    result = None
-    for attempt in range(retries):
-        try:
-            response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
-            
-            if response.status_code != 200:
-                print(f"API Error: {response.status_code} - {response.text}")
-                # Don't retry on 4xx except 429
-                if 400 <= response.status_code < 500 and response.status_code != 429:
-                    return None
-                time.sleep(2)
-                continue
-                
-            result = response.json()
-            break
-        except Exception as e:
-            if attempt == retries - 1:
-                print(f"Error calling AI: {e}")
-                return None
-            time.sleep(2 * (attempt + 1))
-            
     if not result:
         return None
         

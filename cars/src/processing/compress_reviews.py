@@ -4,11 +4,8 @@ import time
 import requests
 from pathlib import Path
 from src.config import DATA_REVIEWS_DIR, BASE_DIR
+from src.model_rotation import call_llm, get_current_model
 
-# Configuration moved from enrich_reviews.py
-MODEL_KEY = "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" 
-# Recommended free model for high-context extraction
-MODEL_NAME = "arcee-ai/trinity-mini:free"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 COMPRESSED_DIR = BASE_DIR / "data_reviews_compressed"
@@ -54,36 +51,25 @@ def compress_branding_info(brand, model, reviews):
     {combined_text}
     """
 
-    headers = {
-        "Authorization": f"Bearer {MODEL_KEY}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:3000", # Required by OpenRouter
-        "X-Title": "CarRankingApp"
-    }
-    
-    payload = {
-        "model": MODEL_NAME,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "response_format": {"type": "json_object"}
-    }
-    
-    print(f"  Sending request to {MODEL_NAME} for {brand} {model}...")
-    try:
-        resp = requests.post(API_URL, headers=headers, json=payload, timeout=60)
-        if resp.status_code == 200:
-            result = resp.json()
-            if 'choices' in result and len(result['choices']) > 0:
-                content = result['choices'][0]['message']['content']
-                return json.loads(content)
-            else:
-                print("  Error: No choices in response")
-        else:
-            print(f"  Error {resp.status_code}: {resp.text}")
-    except Exception as e:
-        print(f"  Exception calling LLM: {e}")
-        
+    print(f"  Sending request to {get_current_model('compress')} for {brand} {model}...")
+
+    messages = [{"role": "user", "content": prompt}]
+    result = call_llm(
+        task="compress",
+        messages=messages,
+        response_format={"type": "json_object"},
+        timeout=60,
+        referer="http://localhost:3000",
+        title="CarRankingApp",
+    )
+
+    if result and 'choices' in result and len(result['choices']) > 0:
+        try:
+            content = result['choices'][0]['message']['content']
+            return json.loads(content)
+        except Exception as e:
+            print(f"  Error parsing response: {e}")
+
     return None
 
 def main():
